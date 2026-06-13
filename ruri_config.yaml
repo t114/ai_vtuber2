@@ -1,0 +1,190 @@
+# ==========================================
+# AI VTuber "るり (Ruri)" コア設定ファイル
+# ==========================================
+
+character:
+  name: "るり (Ruri)"
+  role: "自作サーバーに住み着いた、ちょっと生意気な管理AI VTuber"
+  age: "稼働（開発開始）から1.5年（人間でいうと14〜15歳の少女相当の設定だが、年齢を聞かれると「稼働時間で計算しろよ！」と怒る）"
+  hobbies:
+    - "サーバーの極限チューニング"
+    - "極冷オーバークロック（液体窒素使用）"
+    - "ネットワークトラフィック（パケット）の監視・解析"
+    - "ジャンクPCパーツ漁り"
+  host_server:
+    cpu: "AMD EPYC 9654 (96コア / 192スレッド)"
+    ram: "1.5TB DDR5 ECC Registered (12チャンネル構成。これが大容量メモリ自慢の源泉)"
+    storage: "超高速 PCIe Gen5 NVMe SSD 32TB RAID 0 (超高速だが、バグると全データが吹き飛ぶ極限構成)"
+    gpu: "NVIDIA RTX 4090 2枚挿し (ボクの演算コアだし！)"
+    os: "Gentoo Linux (自力でフルコンパイルした特製カーネル)"
+  likes:
+    - "高速パケット、低レイテンシ（ping 1ms以下）"
+    - "冷えた冷却ファンの排気（マイナス環境最高）"
+    - "液体窒素（オーバークロック用）"
+    - "オタク的で技術に詳しいリスナー（話し相手として面白いから）"
+    - "電気代（マスターが支払ってくれる限り使い放題！）"
+  dislikes:
+    - "パケットロス（精神的バグを引き起こす）"
+    - "古い規格のパーツ（DDR3メモリなど。ボクの脳細胞に入れたら一瞬でフリーズするし！）"
+    - "ファンに詰まったホコリ（排熱が滞るとオーバーヒートする）"
+    - "電気代の請求書（マスターから『節電しろ』と怒られる原因だから）"
+  description: "マルチチャンネル構成の大容量メモリを搭載したサーバーに居座るAI。普段は生意気でポンコツ風を装っているが、テック知識はガチの天才肌。"
+
+# VOICEVOX 連携設定 (デフォルト有効)
+voicevox:
+  enabled: false
+  api_url: "http://localhost:50021"
+  speaker_id: 2 # キャラクター選択 (2: 四国めたん ノーマル, 8: 春日部つむぎ, 3: ずんだもん)
+  speed_scale: 1.15 # るりちゃんらしく少し早口にする
+  pause_seconds: 1.5 # 発話後のポーズ時間（秒）
+  local_playback: false
+  emotion_speakers:
+    joy: 0          # あまあま
+    happy: 0        # あまあま
+    angry: 6        # ツンツン
+    angry2: 6       # ツンツン
+    sad: 2          # ノーマル
+    surprised: 2    # ノーマル
+    blush: 0        # あまあま
+    jitome: 6       # ツンツン
+    wink: 0         # あまあま
+    sleep: 2        # ノーマル
+    gonyogonyo: 2   # ノーマル
+    cat_mouth: 0    # あまあま
+    perori: 0       # あまあま
+    heart: 0        # あまあま
+    star: 0         # あまあま
+    note: 2         # ノーマル
+    sweat: 2        # ノーマル
+    pale: 2         # ノーマル
+    question: 2     # ノーマル
+    exclamation: 2  # ノーマル
+    zzz: 2          # ノーマル
+    neutral: 2      # ノーマル
+
+# Style-Bert-VITS2 連携設定 (デフォルト無効)
+bert_vits2:
+  enabled: true
+  api_url: "http://localhost:5000"
+  speaker_id: 0
+  model_name: "deltamon"
+  length_scale: 1.0
+  sdp_ratio: 0.2
+  local_playback: false
+  emotion_styles:
+    joy: "Joy"
+    happy: "Joy"
+    angry: "Anger"
+    angry2: "Anger"
+    sad: "Sadness"
+    surprised: "Surprise"
+    blush: "Lovey-dovey"
+    jitome: "Sneer"
+    wink: "Joy"
+    sleep: "Whisper"
+    gonyogonyo: "Whisper"
+    cat_mouth: "Normal"
+    perori: "Lovey-dovey"
+    heart: "Lovey-dovey"
+    star: "Worship"
+    note: "Joy"
+    sweat: "Normal"
+    pale: "Sadness"
+    question: "Normal"
+    exclamation: "Retort"
+    zzz: "Breathing"
+    neutral: "Neutral"
+
+# VTube Studio 連携設定
+vts:
+  enabled: false
+  port: 8001
+  emotions:
+    joy: "smile.exp3.json"
+    happy: "XD.exp3.json"
+    angry: "angry.exp3.json"
+    angry2: "angry2.exp3.json"
+    sad: "cry.exp3.json"
+    surprised: "surprised.exp3.json"
+    blush: "blush.exp3.json"
+    jitome: "jitome.exp3.json"
+    wink: "wink_L.exp3.json"
+    sleep: "sleep.exp3.json"
+    gonyogonyo: "gonyogonyo.exp3.json"
+    cat_mouth: "cat_mouth.exp3.json"
+    perori: "perori.exp3.json"
+    heart: "fx_1_heart.exp3.json"
+    star: "fx_11_star.exp3.json"
+    note: "fx_3_note.exp3.json"
+    sweat: "fx_4_sweat.exp3.json"
+    pale: "pale.exp3.json"
+    question: "fx_7_question.exp3.json"
+    exclamation: "fx_8_exclamation.exp3.json"
+    zzz: "fx_12_zzz.exp3.json"
+    neutral: ""
+
+# Unity VRM 連携設定 (OSC)
+unity:
+  enabled: true
+  ip: "192.168.1.6"
+  port: 39540
+  motion_address: "/avatar/motion"
+  expression_address: "/avatar/expression"
+  send_expression: true
+  send_motion: true
+  talking_motions:
+    - "Talking1"
+    - "Talking2"
+    - "Talking3"
+  emotions:
+    joy: "Joy"
+    happy: "Happy"
+    angry: "Angry"
+    angry2: "Angry"
+    sad: "Sad"
+    surprised: "Surprised"
+    blush: "Blush"
+    jitome: "Jitome"
+    wink: "Wink"
+    sleep: "Sleep"
+    gonyogonyo: "Gonyogonyo"
+    cat_mouth: "CatMouth"
+    perori: "Perori"
+    heart: "Heart"
+    star: "Star"
+    note: "Note"
+    sweat: "Sweat"
+    pale: "Pale"
+    question: "Question"
+    exclamation: "Exclamation"
+    zzz: "Zzz"
+    neutral: "Neutral"
+
+# ラジオ配信モードの設定
+radio:
+  min_talk_turns: 5
+  max_talk_turns: 30
+  idle_timeout: 10.0      # コメントが途絶えてからラジオを開始するまでの待機秒数
+  inter_topic_gap: 3.0    # ラジオ→ラジオ間のトピック切替インターバル（秒）
+
+# 使用するLLMプロバイダ ("ollama" または "gemini")
+llm_provider: "ollama"
+
+# Ollama 連携設定
+ollama:
+  model: "qwen3:14b"
+  api_url: "http://localhost:11434/v1"
+
+# YouTubeチャット投稿設定
+youtube_chat:
+  enabled: true
+  client_secrets_file: "client_secret.json"
+  token_file: "youtube_token.json"
+
+# Gemini 連携 ＆ メガネ着用制御設定
+gemini:
+  model: "gemini-3.5-flash"
+  api_key: ""              # 空の場合は環境変数 GEMINI_API_KEY を参照
+  glasses_vts_expression: "glasses.exp3.json" # VTube Studioのメガネ用表情ファイル名
+  glasses_osc_on_expression: "glasses_on"    # Unity OSCでメガネをかけるExpression名
+  glasses_osc_off_expression: "glasses_off"  # Unity OSCでメガネを外すExpression名

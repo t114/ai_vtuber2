@@ -1,0 +1,8 @@
+requests
+PyYAML
+pytchat
+python-osc
+duckduckgo_search
+hermes-agent
+fastapi
+uvicorn

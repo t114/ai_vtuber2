@@ -1,0 +1,8 @@
+.venv/
+.hermes/
+__pycache__/
+*.pyc
+*.db
+*.log
+*.wav
+ruri_status.json

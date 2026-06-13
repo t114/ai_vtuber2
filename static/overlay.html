@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>るりちゃん OBS Overlay</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-pink: #ff007f;
+            --neon-blue: #00f0ff;
+            --cyber-yellow: #ffcc00;
+            --bg-dark: rgba(10, 10, 15, 0.85);
+            --border-glow: rgba(255, 0, 127, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: rgba(0, 0, 0, 0) !important; /* OBS用に透明化 */
+            margin: 0;
+            padding: 20px;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #container {
+            width: 100%;
+            max-width: 680px;
+        }
+
+        /* 共通の吹き出しカードスタイル */
+        .balloon-card {
+            background: linear-gradient(135deg, var(--bg-dark), rgba(15, 10, 25, 0.95));
+            border-radius: 12px;
+            padding: 16px 22px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            width: 100%;
+            animation: appear 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            z-index: 1;
+        }
+
+        @keyframes appear {
+            0% {
+                opacity: 0;
+                transform: translateY(12px) scale(0.97);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .balloon-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .inner-wrapper {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* リスナーの吹き出し */
+        .user-balloon {
+            border-left: 6px solid var(--neon-blue);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 0 10px rgba(0, 240, 255, 0.2);
+            margin-bottom: 12px;
+            animation: user-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes user-appear {
+            0% {
+                opacity: 0;
+                transform: translateX(-15px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .user-label {
+            color: var(--neon-blue);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-msg {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.4;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        /* るりちゃんの吹き出し */
+        .ruri-balloon {
+            border-left: 6px solid var(--neon-pink);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 15px var(--border-glow);
+        }
+
+        .ruri-label {
+            color: var(--neon-pink);
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ruri-label::after {
+            content: "";
+            height: 1px;
+            flex-grow: 1;
+            background: linear-gradient(90deg, rgba(255, 0, 127, 0.3), transparent);
+            margin-left: 10px;
+        }
+
+        .ruri-msg {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.5;
+            text-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.8),
+                0 0 1px rgba(255, 255, 255, 0.5);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        /* ラジオモード用 トークテーマ表示 */
+        .topic-badge {
+            background: rgba(255, 204, 0, 0.15);
+            color: var(--cyber-yellow);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 900;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .topic-title {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 6px;
+        }
+
+        /* アニメーション制御 */
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        .fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 音声再生ロック解除ボタン */
+        #audio-unlock-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--neon-pink), #9000ff);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #audio-unlock-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.9);
+        }
+        #audio-unlock-btn.unlocked {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-20px);
+        }
+
+        /* Loadingアニメーション */
+        .thinking-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0;
+        }
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--neon-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-pink);
+            animation: dot-pulse 1.4s infinite ease-in-out both;
+        }
+        .thinking-dot:nth-child(2) {
+            animation-delay: 0.2s;
+            background: var(--neon-blue);
+            box-shadow: 0 0 8px var(--neon-blue);
+        }
+        .thinking-dot:nth-child(3) {
+            animation-delay: 0.4s;
+            background: var(--cyber-yellow);
+            box-shadow: 0 0 8px var(--cyber-yellow);
+        }
+        @keyframes dot-pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <button id="audio-unlock-btn" onclick="unlockAudio()">
+        🔊 音声再生を有効化 (OBS/ブラウザ用)
+    </button>
+
+    <div id="container">
+        <!-- JavaScriptで動的生成されるエリア -->
+    </div>
+
+    <script>
+        // 設定オブジェクト
+        let vtsEnabled = false;
+        let vtsPort = 8001;
+        let vtsEmotionsMap = {};
+        let glassesVtsExpression = "";
+        let currentGlassesOn = false;
+        
+        let vtsWs = null;
+        let vtsToken = localStorage.getItem('ruri_vts_token') || "";
+        let vtsAuthenticated = false;
+        let vtsActiveExpressions = new Set();
+        
+        let currentMode = "";
+        let currentTopic = "";
+        let currentUserName = "";
+        let currentUserComment = "";
+        let currentRuriMsg = "";
+        let currentVoiceId = "";
+        let currentEmotion = "neutral";
+        let voiceUnlocked = false;
+        let audioWs = null;
+        let pendingStatus = null;
+        
+        class AudioStreamPlayer {
+          constructor() {
+            this.audioCtx = null;
+            this.queue = [];
+            this.isPlaying = false;
+            this.activeSource = null;
+            this.isLoading = false;
+            this.readyToPlay = false; // サーバー側ですべての音声が生成完了したか
+            this.startTimeout = null;
+          }
+
+          initContext() {
+            if (!this.audioCtx) {
+              this.audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+            }
+            if (this.audioCtx.state === 'suspended') {
+              this.audioCtx.resume();
+            }
+          }
+
+          async addChunk(chunkData) {
+            this.initContext();
+
+            // まだ再生開始しておらず、再生準備完了でもない場合、ロード画面を表示する
+            if (!this.isPlaying && !this.readyToPlay) {
+              this.isLoading = true;
+              renderLayout();
+            }
+
+            try {
+              const base64Content = chunkData.audio.split(',')[1];
+              const binaryString = window.atob(base64Content);
+              const len = binaryString.length;
+              const bytes = new Uint8Array(len);
+              for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              const arrayBuffer = bytes.buffer;
+
+              this.audioCtx.decodeAudioData(arrayBuffer, (audioBuffer) => {
+                this.queue.push({
+                  buffer: audioBuffer,
+                  text: chunkData.text,
+                  emotion: chunkData.emotion,
+                  status: chunkData.status, // 送信時点のコンテキストメタデータ
+                  idx: chunkData.idx       // 文のインデックス
+                });
+                
+                // すでに全パケットが揃っており、かつ未再生であれば再生を開始する
+                if (this.readyToPlay && !this.isPlaying) {
+                  this.playNext();
+                }
+              }, (error) => {
+                console.error("音声デコードエラー:", error);
+              });
+            } catch (e) {
+              console.error("データデコードに失敗:", e);
+            }
+          }
+
+          setPlaybackReady() {
+            this.readyToPlay = true;
+            this.isLoading = false;
+            if (!this.isPlaying) {
+              this.playNext();
+            }
+          }
+
+          playNext() {
+            if (this.startTimeout) {
+              clearTimeout(this.startTimeout);
+              this.startTimeout = null;
+            }
+            if (this.queue.length === 0) {
+              this.isPlaying = false;
+              this.activeSource = null;
+              this.isLoading = false;
+              this.readyToPlay = false; // 再生終了につきフラグリセット
+              
+              // 音声の再生が完全に終了した時、保留されていたトピックやコンテキストがあれば反映する
+              if (pendingStatus) {
+                  console.log("[Audio Player] Applying pending status:", pendingStatus);
+                  let changed = false;
+                  if (pendingStatus.mode !== undefined && pendingStatus.mode !== null && pendingStatus.mode !== currentMode) {
+                      currentMode = pendingStatus.mode;
+                      changed = true;
+                  }
+                  if (pendingStatus.topic !== undefined && pendingStatus.topic !== null && pendingStatus.topic !== currentTopic) {
+                      currentTopic = pendingStatus.topic;
+                      changed = true;
+                  }
+                  if (pendingStatus.user_name !== undefined && pendingStatus.user_name !== null && pendingStatus.user_name !== currentUserName) {
+                      currentUserName = pendingStatus.user_name;
+                      changed = true;
+                  }
+                  if (pendingStatus.user_comment !== undefined && pendingStatus.user_comment !== null && pendingStatus.user_comment !== currentUserComment) {
+                      currentUserComment = pendingStatus.user_comment;
+                      changed = true;
+                  }
+                  // ruri_msg が空文字（リセット）のときだけ適用し、再描画を走らせる
+                  if (pendingStatus.ruri_msg === "" && currentRuriMsg !== "") {
+                      currentRuriMsg = "";
+                      changed = true;
+                  }
+                  if (pendingStatus.emotion !== undefined && pendingStatus.emotion !== null && pendingStatus.emotion !== currentEmotion) {
+                      currentEmotion = pendingStatus.emotion;
+                      changed = true;
+                  }
+                  
+                  pendingStatus = null;
+                  if (changed) {
+                      renderLayout();
+                  }
+              }
+              return;
+            }
+
+            this.isPlaying = true;
+            this.isLoading = false; // 再生開始したのでローディング解除
+            const item = this.queue.shift();
+
+            // 字幕と表情の同期更新
+            currentRuriMsg = item.text;
+            currentEmotion = item.emotion;
+            
+            let statusChanged = false;
+            if (item.status) {
+                if (item.status.mode !== undefined && item.status.mode !== null && item.status.mode !== currentMode) {
+                    currentMode = item.status.mode;
+                    statusChanged = true;
+                }
+                if (item.status.topic !== undefined && item.status.topic !== null && item.status.topic !== currentTopic) {
+                    currentTopic = item.status.topic;
+                    statusChanged = true;
+                }
+                if (item.status.user_name !== undefined && item.status.user_name !== null && item.status.user_name !== currentUserName) {
+                    currentUserName = item.status.user_name;
+                    statusChanged = true;
+                }
+                if (item.status.user_comment !== undefined && item.status.user_comment !== null && item.status.user_comment !== currentUserComment) {
+                    currentUserComment = item.status.user_comment;
+                    statusChanged = true;
+                }
+            }
+
+            if (typeof setVTSExpression === 'function') {
+              setVTSExpression(currentEmotion);
+            }
+
+            // OSC同期用の再生開始信号を送信
+            if (audioWs && audioWs.readyState === WebSocket.OPEN) {
+                audioWs.send(JSON.stringify({
+                    type: "play_start",
+                    emotion: currentEmotion
+                }));
+            }
+
+            if (statusChanged) {
+                renderLayout();
+            } else {
+                const msgEl = document.getElementById('ruri-text-el');
+                if (msgEl) {
+                  msgEl.classList.add('fade-out');
+                  setTimeout(() => {
+                    msgEl.textContent = item.text;
+                    msgEl.classList.remove('fade-out');
+                    msgEl.classList.add('fade-in');
+                  }, 150);
+                } else {
+                  renderLayout();
+                }
+            }
+
+            const source = this.audioCtx.createBufferSource();
+            this.activeSource = source;
+            source.buffer = item.buffer;
+            source.connect(this.audioCtx.destination);
+            
+            source.onended = () => {
+              if (this.activeSource === source) {
+                this.activeSource = null;
+              }
+              this.playNext();
+            };
+
+            source.start(0);
+          }
+
+          clear() {
+            this.queue = [];
+            this.readyToPlay = false; // フラグリセット
+            if (this.startTimeout) {
+              clearTimeout(this.startTimeout);
+              this.startTimeout = null;
+            }
+            if (this.activeSource) {
+              try {
+                this.activeSource.stop();
+              } catch (e) {}
+              this.activeSource = null;
+            }
+            this.isPlaying = false;
+            this.isLoading = true; // 新しい発話の待機が始まったのでローディング開始
+            // 即時画面を再描画
+            renderLayout();
+          }
+        }
+
+        const audioPlayer = new AudioStreamPlayer();
+        const container = document.getElementById('container');
+
+        // 音声再生規制の解除
+        function unlockAudio() {
+            voiceUnlocked = true;
+            try {
+                audioPlayer.initContext();
+            } catch (e) {}
+            
+            const btn = document.getElementById('audio-unlock-btn');
+            btn.classList.add('unlocked');
+            setTimeout(() => btn.remove(), 400);
+            console.log("Audio playback unlocked!");
+        }
+
+        function connectAudioWebSocket() {
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            audioWs = new WebSocket(`${wsProtocol}//${location.host}/ws/audio`);
+            
+            audioWs.onopen = () => {
+                console.log("[Audio WS] Connected successfully!");
+            };
+
+            audioWs.onmessage = async (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === "clear") {
+                        audioPlayer.clear();
+                    } else if (data.type === "playback_ready") {
+                        console.log("[Audio WS] Received playback_ready. Launching speech.");
+                        audioPlayer.setPlaybackReady();
+                    } else if (data.audio) {
+                        audioPlayer.addChunk(data);
+                    }
+                } catch (e) {
+                    console.error("[Audio WS] Message parsing error:", e);
+                }
+            };
+
+            audioWs.onclose = () => {
+                console.log("[Audio WS] Connection closed. Reconnecting in 3 seconds...");
+                setTimeout(connectAudioWebSocket, 3000);
+            };
+
+            audioWs.onerror = (err) => {
+                console.error("[Audio WS] Error:", err);
+            };
+        }
+
+        // ロード時に接続を開始
+        connectAudioWebSocket();
+
+        // Web API Configの取得とVTS接続
+        fetch("/api/config")
+            .then(res => res.json())
+            .then(data => {
+                vtsEnabled = data.vts_enabled;
+                vtsPort = data.vts_port;
+                vtsEmotionsMap = data.vts_emotions || {};
+                glassesVtsExpression = data.glasses_vts_expression || "";
+                
+                if (vtsEnabled) {
+                    connectVTS();
+                }
+            })
+            .catch(err => console.error("Error fetching config:", err));
+
+        function connectVTS() {
+            try {
+                vtsWs = new WebSocket(`ws://localhost:${vtsPort}`);
+                
+                vtsWs.onopen = () => {
+                    console.log("[VTS] WebSocket Connected");
+                    if (vtsToken) {
+                        authenticateVTS(vtsToken);
+                    } else {
+                        requestVTSToken();
+                    }
+                };
+                
+                vtsWs.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.messageType === "AuthenticationTokenResponse") {
+                            vtsToken = msg.data.authenticationToken;
+                            localStorage.setItem('ruri_vts_token', vtsToken);
+                            console.log("[VTS] Token received and saved.");
+                            authenticateVTS(vtsToken);
+                        } else if (msg.messageType === "AuthenticationResponse") {
+                            if (msg.data.authenticated) {
+                                console.log("[VTS] Authenticated successfully!");
+                                vtsAuthenticated = true;
+                                requestVTSExpressionState();
+                                if (currentEmotion !== "neutral") {
+                                    setVTSExpression(currentEmotion);
+                                }
+                                applyVTSGlasses(currentGlassesOn);
+                            } else {
+                                console.error("[VTS] Authentication failed:", msg.data.reason);
+                                localStorage.removeItem('ruri_vts_token');
+                                vtsToken = "";
+                                vtsWs.close();
+                            }
+                        } else if (msg.messageType === "ExpressionStateResponse") {
+                            if (msg.data && msg.data.expressions) {
+                                vtsActiveExpressions.clear();
+                                for (const expr of msg.data.expressions) {
+                                    if (expr.active) {
+                                        vtsActiveExpressions.add(expr.file);
+                                    }
+                                }
+                                console.log("[VTS] Synced active expressions:", Array.from(vtsActiveExpressions));
+                            }
+                        }
+                    } catch (e) {
+                        console.error("[VTS] Error parsing message:", e);
+                    }
+                };
+                
+                vtsWs.onclose = () => {
+                    console.log("[VTS] WebSocket Closed. Reconnecting in 5 seconds...");
+                    vtsAuthenticated = false;
+                    vtsMessageQueue = [];
+                    vtsProcessingQueue = false;
+                    vtsActiveExpressions.clear();
+                    setTimeout(connectVTS, 5000);
+                };
+
+                vtsWs.onerror = (err) => {
+                    console.error("[VTS] WebSocket Error:", err);
+                };
+            } catch (e) {
+                console.error("[VTS] Connection setup failed:", e);
+            }
+        }
+
+        function requestVTSToken() {
+            const req = {
+                "apiName": "VTubeStudioPublicAPI",
+                "apiVersion": "1.0",
+                "requestID": "TokenReq",
+                "messageType": "AuthenticationTokenRequest",
+                "data": {
+                    "pluginName": "Ruri AI VTuber",
+                    "pluginDeveloper": "Reppu"
+                }
+            };
+            try {
+                vtsWs.send(JSON.stringify(req));
+            } catch (e) {
+                console.error("[VTS] Failed to send TokenReq:", e);
+            }
+        }
+
+        function authenticateVTS(token) {
+            const req = {
+                "apiName": "VTubeStudioPublicAPI",
+                "apiVersion": "1.0",
+                "requestID": "AuthReq",
+                "messageType": "AuthenticationRequest",
+                "data": {
+                    "pluginName": "Ruri AI VTuber",
+                    "pluginDeveloper": "Reppu",
+                    "authenticationToken": token
+                }
+            };
+            try {
+                vtsWs.send(JSON.stringify(req));
+            } catch (e) {
+                console.error("[VTS] Failed to send AuthReq:", e);
+            }
+        }
+
+        function requestVTSExpressionState() {
+            const req = {
+                "apiName": "VTubeStudioPublicAPI",
+                "apiVersion": "1.0",
+                "requestID": "ExprStateReq",
+                "messageType": "ExpressionStateRequest",
+                "data": {
+                    "details": false
+                }
+            };
+            vtsMessageQueue.push(req);
+            processVTSQueue();
+        }
+
+        let vtsMessageQueue = [];
+        let vtsProcessingQueue = false;
+
+        function processVTSQueue() {
+            if (vtsProcessingQueue || vtsMessageQueue.length === 0) return;
+            if (!vtsWs || vtsWs.readyState !== WebSocket.OPEN) {
+                vtsMessageQueue = [];
+                vtsProcessingQueue = false;
+                return;
+            }
+            vtsProcessingQueue = true;
+            const req = vtsMessageQueue.shift();
+            try {
+                vtsWs.send(JSON.stringify(req));
+            } catch (e) {
+                console.error("[VTS] WebSocket send error:", e);
+                vtsProcessingQueue = false;
+                vtsMessageQueue = [];
+                return;
+            }
+            setTimeout(() => {
+                vtsProcessingQueue = false;
+                processVTSQueue();
+            }, 80);
+        }
+
+        function sendExpressionActivation(expressionFile, active) {
+            const req = {
+                "apiName": "VTubeStudioPublicAPI",
+                "apiVersion": "1.0",
+                "requestID": "ExprActReq",
+                "messageType": "ExpressionActivationRequest",
+                "data": {
+                    "expressionFile": expressionFile,
+                    "active": active
+                }
+            };
+            vtsMessageQueue.push(req);
+            
+            if (active) {
+                vtsActiveExpressions.add(expressionFile);
+            } else {
+                vtsActiveExpressions.delete(expressionFile);
+            }
+            
+            processVTSQueue();
+        }
+
+        function setVTSExpression(emotionOrFile) {
+            if (!vtsEnabled || !vtsAuthenticated || !vtsWs || vtsWs.readyState !== WebSocket.OPEN) return;
+            
+            const targetExpression = (emotionOrFile in vtsEmotionsMap) ? vtsEmotionsMap[emotionOrFile] : (emotionOrFile || "");
+            console.log(`[VTS] Expression mapping: "${emotionOrFile}" -> "${targetExpression}"`);
+            
+            // 全てOFFにしてから目的のものをONにする
+            for (const activeExpr of vtsActiveExpressions) {
+                if (activeExpr !== targetExpression) {
+                    sendExpressionActivation(activeExpr, false);
+                }
+            }
+            
+            if (targetExpression) {
+                if (!vtsActiveExpressions.has(targetExpression)) {
+                    sendExpressionActivation(targetExpression, true);
+                }
+            }
+        }
+
+        function applyVTSGlasses(isOn) {
+            if (!vtsEnabled || !vtsAuthenticated || !vtsWs || vtsWs.readyState !== WebSocket.OPEN || !glassesVtsExpression) return;
+            console.log(`[VTS] Glasses state update: ${isOn} (File: ${glassesVtsExpression})`);
+            sendExpressionActivation(glassesVtsExpression, isOn);
+        }
+
+        // SSE 接続による状態受信
+        const eventSource = new EventSource("/api/events");
+
+        eventSource.addEventListener("status", (e) => {
+            const data = JSON.parse(e.data);
+            console.log("SSE Overlay state received:", data);
+            
+            // 音声が再生中の場合は、コンテキスト情報（mode, topic, user_name, user_comment, ruri_msg）の更新を保留する
+            if (audioPlayer.isPlaying) {
+                console.log("[SSE] Audio is playing. Delaying status update.");
+                pendingStatus = Object.assign(pendingStatus || {}, {
+                    mode: data.mode !== undefined ? data.mode : (pendingStatus ? pendingStatus.mode : currentMode),
+                    topic: data.topic !== undefined ? data.topic : (pendingStatus ? pendingStatus.topic : currentTopic),
+                    user_name: data.user_name !== undefined ? data.user_name : (pendingStatus ? pendingStatus.user_name : currentUserName),
+                    user_comment: data.user_comment !== undefined ? data.user_comment : (pendingStatus ? pendingStatus.user_comment : currentUserComment),
+                    ruri_msg: (data.ruri_msg === "") ? "" : (pendingStatus ? pendingStatus.ruri_msg : currentRuriMsg),
+                    emotion: data.emotion !== undefined ? data.emotion : (pendingStatus ? pendingStatus.emotion : currentEmotion)
+                });
+                
+                // メガネの着脱などの即時的な要素はすぐに反映する
+                if (data.glasses_on !== undefined && data.glasses_on !== null && data.glasses_on !== currentGlassesOn) {
+                    currentGlassesOn = data.glasses_on;
+                    applyVTSGlasses(currentGlassesOn);
+                }
+                return;
+            }
+
+            let modeChanged = (data.mode !== undefined) && (data.mode !== currentMode);
+            let topicChanged = (data.topic !== undefined) && (data.topic !== currentTopic);
+            let commentChanged = (data.user_comment !== undefined) && (data.user_comment !== currentUserComment);
+            let msgChanged = (data.ruri_msg !== undefined) && (data.ruri_msg !== currentRuriMsg);
+            let voiceChanged = data.voice_data && data.voice_id && (data.voice_id !== currentVoiceId);
+            let emotionChanged = (data.emotion !== undefined) && (data.emotion !== currentEmotion);
+            let glassesOnChanged = (data.glasses_on !== undefined) && (data.glasses_on !== currentGlassesOn);
+
+            // モード切替時はるりの発言テキストを必ずリセット（前モードの残留テキストを防ぐ）
+            if (modeChanged) {
+                currentRuriMsg = "";
+            }
+
+            // グローバル状態をマージ更新 (null/undefinedを厳格にガード)
+            if (data.mode !== undefined && data.mode !== null) currentMode = data.mode;
+            if (data.topic !== undefined && data.topic !== null && data.topic !== "undefined") currentTopic = data.topic;
+            if (data.user_name !== undefined && data.user_name !== null) currentUserName = data.user_name;
+            if (data.user_comment !== undefined && data.user_comment !== null) currentUserComment = data.user_comment;
+            // ruri_msg は空文字("")も有効な値として受け入れる（リセット用）
+            if (data.ruri_msg !== undefined && data.ruri_msg !== null && data.ruri_msg !== "undefined") currentRuriMsg = data.ruri_msg;
+            if (data.emotion !== undefined && data.emotion !== null) currentEmotion = data.emotion;
+            if (data.glasses_on !== undefined && data.glasses_on !== null) currentGlassesOn = data.glasses_on;
+
+            if (glassesOnChanged) {
+                applyVTSGlasses(currentGlassesOn);
+            }
+
+            // ストリーミング再生中（audioPlayer.isPlaying === true）は、WebSocket経由の再生キュー（playNext）で
+            // 字幕・表情を同期更新するため、SSEからの直接の表情変更や再生処理は行いません。
+            if (!audioPlayer.isPlaying) {
+                if (emotionChanged) {
+                    setVTSExpression(currentEmotion);
+                }
+            }
+
+            if (modeChanged || (currentMode === 'radio' && topicChanged) || (currentMode === 'chat' && commentChanged)) {
+                renderLayout();
+            } else if (msgChanged) {
+                if (!audioPlayer.isPlaying) {
+                    const msgEl = document.getElementById('ruri-text-el');
+                    if (msgEl) {
+                        msgEl.classList.add('fade-out');
+                        setTimeout(() => {
+                            msgEl.textContent = currentRuriMsg;
+                            msgEl.classList.remove('fade-out');
+                            msgEl.classList.add('fade-in');
+                        }, 200);
+                    }
+                }
+            }
+        });
+
+
+
+        function renderLayout() {
+            // トピックと発話の安全なフォールバック
+            const safeTopic = (currentTopic && currentTopic !== "undefined") ? currentTopic : "のんびり雑談中";
+            
+            // ローディング中か、通常のメッセージ表示かを決定
+            let ruriMessageHtml = "";
+            if (audioPlayer.isLoading) {
+                ruriMessageHtml = `
+                    <div class="thinking-dots">
+                        <span style="font-size: 13px; font-weight: 900; color: #a0a0c0; margin-right: 8px; font-family: 'Outfit', monospace; letter-spacing: 1px;">NOW LOADING</span>
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                    </div>
+                `;
+            } else {
+                const safeRuriMsg = (currentRuriMsg && currentRuriMsg !== "undefined") ? currentRuriMsg : "";
+                if (safeRuriMsg) {
+                    ruriMessageHtml = `<div class="ruri-msg" id="ruri-text-el">${safeRuriMsg}</div>`;
+                }
+            }
+
+            if (currentMode === "chat") {
+                const chatCard = document.getElementById("ruri-chat-card");
+                const userCard = document.getElementById("ruri-user-card");
+                
+                if (chatCard && userCard) {
+                    // 骨組みがあるなら中身を部分更新して点滅（アニメーション再起動）を防ぐ
+                    const userMsgEl = document.getElementById("ruri-user-msg-el");
+                    if (userMsgEl) userMsgEl.textContent = currentUserComment;
+                    
+                    chatCard.style.display = ruriMessageHtml ? "block" : "none";
+                    const contentArea = document.getElementById("ruri-chat-content-area");
+                    if (contentArea) {
+                        contentArea.innerHTML = ruriMessageHtml;
+                    }
+                } else {
+                    // ない場合は新規作成
+                    container.innerHTML = `
+                        <div class="balloon-card user-balloon" id="ruri-user-card">
+                            <div class="inner-wrapper">
+                                <div class="user-label">💬 ${currentUserName}</div>
+                                <div class="user-msg" id="ruri-user-msg-el">${currentUserComment}</div>
+                            </div>
+                        </div>
+                        <div class="balloon-card ruri-balloon" id="ruri-chat-card" style="display: ${ruriMessageHtml ? "block" : "none"};">
+                            <div class="inner-wrapper">
+                                <div class="ruri-label">💖 ruri.sys</div>
+                                <div id="ruri-chat-content-area">${ruriMessageHtml}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // ラジオモード
+                const radioCard = document.getElementById("ruri-radio-card");
+                if (radioCard) {
+                    // 骨組みがあるなら中身を部分更新して点滅（アニメーション再起動）を防ぐ
+                    const topicTitleEl = document.getElementById("ruri-topic-title-el");
+                    if (topicTitleEl) topicTitleEl.textContent = `📻 ${safeTopic}`;
+                    
+                    const labelEl = document.getElementById("ruri-radio-label");
+                    if (labelEl) {
+                        labelEl.style.display = ruriMessageHtml ? "flex" : "none";
+                    }
+                    const contentArea = document.getElementById("ruri-radio-content-area");
+                    if (contentArea) {
+                        contentArea.innerHTML = ruriMessageHtml;
+                    }
+                } else {
+                    // ない場合は新規作成
+                    container.innerHTML = `
+                        <div class="balloon-card ruri-balloon" id="ruri-radio-card">
+                            <div class="inner-wrapper">
+                                <div class="topic-badge">Live Topic</div>
+                                <div class="topic-title" id="ruri-topic-title-el">📻 ${safeTopic}</div>
+                                <div class="ruri-label" style="margin-top: 12px; display: ${ruriMessageHtml ? "flex" : "none"};" id="ruri-radio-label">💖 ruri.sys</div>
+                                <div id="ruri-radio-content-area">${ruriMessageHtml}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

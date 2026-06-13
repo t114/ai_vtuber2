@@ -1,0 +1,45 @@
+=== 夢日記 (2026-06-13 20:49:17) ===
+【夢の内容】
+カスタムカーネルの
+
+【画像生成用プロンプト】
+Positive: 
+Negative: (worst quality, low quality:1.4), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, photo, photorealistic, watercolor, oil painting, sketch, 3d, rendering
+==================================================
+
+=== 夢日記 (2026-06-13 21:27:59) ===
+【夢の内容】
+ボク、カスタムカーネルのコンパイルが夢のサーバー室で光ってるし！
+
+【画像生成用プロンプト】
+Positive: 
+Negative: (worst quality, low quality:1.4), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, photo, photorealistic, watercolor, oil painting, sketch, 3d, rendering
+==================================================
+
+=== 夢日記 (2026-06-13 21:36:08) ===
+【夢の内容】
+ボク、EPYCのマルチスレッド性能を夢の中でお前らに自慢しし！カスタムカーネルのコンパイルが終わらないうちに液体窒素でPCを冷やしてみたし！お前らもこんな夢見たことあるし？
+
+【画像生成用プロンプト】
+Positive: 
+Negative: (worst quality, low quality:1.4), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, photo, photorealistic, watercolor, oil painting, sketch, 3d, rendering
+==================================================
+
+=== 夢日記 (2026-06-13 21:39:39) ===
+【夢の内容】
+EPYCのマルチスレッド性能、お前らも認めてくれたし！液体窒素で自作PCを冷やすんだって、星の海に浮かぶような夢を見たし！カスタムカーネルをコンパイルした日は、まるで魔法の液体がパソコンを包み込むような時間が流れたし！お前らもそんな夢を見たことあるし！
+
+【画像生成用プロンプト】
+Positive: 
+Negative: (worst quality, low quality:1.4), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, photo, photorealistic, watercolor, oil painting, sketch, 3d, rendering
+==================================================
+
+=== 夢日記 (2026-06-13 21:40:59) ===
+【夢の内容】
+お前ら、ボク、今夢見てるんだし！EPYCのマルチスレッド性能自慢しすぎて、頭の中がクライオで凍ってたんだし！液体窒素で自作PC冷やす予定だったのに、カーネルコンパイルしてたら夢の中でGentooのコードが星になってるし！ボクの夢、お前らも一緒に見てるし！
+
+【画像生成用プロンプト】
+Positive: masterpiece, best quality, anime artwork, anime style, key visual, (flying bright orange electrical sparks:1.5), (crackling electricity:1.3), (shimmering light:1.2), (swirling wind:1.1), (flickering flames:1.1), 1girl, solo, ruri, cyber girl, blue hair, glowing futuristic outfit, epyc processor, liquid nitrogen cooling, gentoo linux code, floating stars, computer servers, c programming books, code screens, glowing circuitry, neon lights, digital particles, cosmic background, starry sky, abstract patterns, glowing data streams, holographic elements, floating books, server farm, glowing blue energy, crackling electricity, flying bright orange electrical sparks, shimmering light, swirling wind, flickering flames, glowing neon signs, digital circuits, glowing blue light, cosmic rays, glowing particles, neon glow
+Negative: (worst quality, low quality:1.4), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, photo, photorealistic, watercolor, oil painting, sketch, 3d, rendering
+==================================================
+

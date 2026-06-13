@@ -1,0 +1,211 @@
+========================================================================
+AI VTuber 音声ストリーミング再生システム：実装計画書
+========================================================================
+
+【システム概要】
+LLM（大規模言語モデル）のテキスト出力ストリームをリアルタイムにチャンク（断片）化し、
+Bert-VITS2を用いて順次音声合成を行い、WebSocket経由でOBSブラウザに転送・
+Web Audio APIのキュー（Queue）を用いて途切れなく数珠つなぎ再生する低遅延システム。
+
+------------------------------------------------------------------------
+1. 全体アーキテクチャ ＆ データフロー
+------------------------------------------------------------------------
+
+[ユーザーのコメント] ──> 【LLM（Streamモード）】
+                              │ (リアルタイムテキスト出力)
+                              ▼
+                        【テキスト分割バッファ】
+                              │ (「。」や「！」などの区切りで抽出)
+                              ▼
+                        【Bert-VITS2 API（非同期）】
+                              │ (Wavバイナリ生成)
+                              ▼
+                        【サーバー側 WebSocket】
+                              │ (順次送出)
+                              ▼
+                        【OBSブラウザ（JavaScript）】
+                              │ (AudioContext キュー管理)
+                              ▼
+                        [ノイズのないスムーズな発話再生]
+
+------------------------------------------------------------------------
+2. フェーズ別 実装ステップ
+------------------------------------------------------------------------
+
+■ フェーズ1：【フロントエンド】OBS側のキュー再生エンジン作成
+サーバーから順次送られてくる音声断片を、重複や音切れなく連続再生する基盤を作ります。
+
+  * タスク 1.1: Web Audio API (AudioContext) を使用した、
+                再生管理クラス (AudioStreamPlayer) の実装。
+  * タスク 1.2: 再生待ちバッファ（Queue）を配列で管理し、現在再生中の音声が
+                終了したイベント (onended) をトリガーに次の音声を再生する
+                ループ処理の実装。
+  * タスク 1.3: OBSのサンプリングレート設定（例: 48kHz）とAudioContextの
+                レートを一致させ、デコード時のプチプチノイズ（ポップノイズ）
+                の発生を防ぐ設定値の固定。
+
+■ フェーズ2：【通信】WebSocketによるリアルタイムデータ転送
+サーバーとOBSブラウザの間を常時接続し、音声バイナリデータを低遅延で送受信します。
+
+  * タスク 2.1: サーバー側（FastAPI等）にWebSocketエンドポイント (/ws/audio) 
+                の作成。
+  * タスク 2.2: OBS（JS）側でのWebSocket接続・切断管理、およびバイナリデータ
+                (Blob/ArrayBuffer) 受信時にキュークラスへ自動投入する処理。
+  * タスク 2.3: 既存の音声ファイルを複数に分割してサーバーから数秒おきに
+                送信し、OBS側で違和感なく結合されて聴こえるかの通信テスト。
+
+■ フェーズ3：【バックエンド】LLMストリーミング ＆ テキスト分割バッファ
+LLMのテキスト出力を監視し、意味の区切り（文末）を検知してBert-VITS2へ投げる
+最適なテキストサイズに切り出すロジックを実装します。
+
+  * タスク 3.1: LLM（OpenAI API、Ollama等）のストリーミング呼び出し(stream=True)
+                の実装。
+  * タスク 3.2: 正規表現等を用いたテキスト区切りバッファの実装。
+                （「。」「！」「？」「
+」等の文字を検知して文を確定させる。
+                  また、1文が長すぎる場合は「、」や一定文字数で区切る）
+  * タスク 3.3: ターミナル等に切り出されたテキストチャンクを順次ログ出力し、
+                適切な長さ（15〜30文字程度）でリアルタイム分割されているかの検証。
+
+■ フェーズ4：【統合】Bert-VITS2連携 ＆ 非同期並行パイプライン
+切り出されたテキストを即座に音声化し、パイプライン化します。1文目を再生している
+間に、裏で2文目・3文目の音声合成を並行して走らせることで、テンポを爆速にします。
+
+  * タスク 4.1: Bert-VITS2のAPI（/voice 等）を、Pythonの `httpx.AsyncClient` 
+                などを用いて非同期で呼び出す関数の実装。
+  * タスク 4.2: 音声合成が完了したWavバイナリデータを、非同期タスク
+                (asyncio.create_task) の中で即座にWebSocket（send_bytes）
+                経由でOBSへ射出する処理の統合。
+  * タスク 4.3: 「ユーザーコメント入力 ──> LLM ──> 分割 ──> VITS ──> OBS」
+                の全レイヤーを結合した総合実機テスト。
+
+------------------------------------------------------------------------
+3. 主要コード設計・リファレンス
+------------------------------------------------------------------------
+
+【サーバー側：テキストチャンク分割 ＆ 送信ロジック（Python/疑似コード）】
+------------------------------------------------------------------------
+import asyncio
+import re
+
+async def text_to_speech_stream(websocket, llm_stream_generator):
+    text_buffer = ""
+    # 文の区切り文字パターン（。や！、クエスチョン、改行など）
+    sentence_end_pattern = re.compile(r'[。！？
+]')
+
+    for chunk in llm_stream_generator:
+        content = chunk.choices[0].delta.content
+        if content:
+            text_buffer += content
+            
+            # バッファ内に区切り文字があるかチェック
+            if sentence_end_pattern.search(text_buffer):
+                # 確定した部分と未完成の部分に分割
+                sentences = sentence_end_pattern.split(text_buffer)
+                
+                # 確定したすべての文を非同期で音声合成・送信タスクに回す
+                for sentence in sentences[:-1]:
+                    sentence = sentence.strip()
+                    if sentence:
+                        # バックグラウンドタスクとして即時実行（LLMの受信をブロックしない）
+                        asyncio.create_task(generate_and_send_audio(websocket, sentence))
+                
+                # まだ文末に達していない残りのテキストをバッファに戻す
+                text_buffer = sentences[-1]
+
+    # LLMの出力がすべて終了した後、バッファに残っている最後のテキストを処理
+    if text_buffer.strip():
+        await generate_and_send_audio(websocket, text_buffer.strip())
+
+async def generate_and_send_audio(websocket, text):
+    # 1. Bert-VITS2のAPIを非同期リクエストで叩く
+    audio_bytes = await call_bert_vits2_api(text)
+    # 2. WebSocket経由でOBSへ直接バイナリデータを送信
+    await websocket.send_bytes(audio_bytes)
+------------------------------------------------------------------------
+
+
+【OBSブラウザ側：Web Audio API 数珠つなぎ再生（JavaScript）】
+------------------------------------------------------------------------
+class AudioStreamPlayer {
+  constructor() {
+    // OBSのサンプリングレート（通常48000Hz）に合わせて初期化し、リサンプリングノイズを防ぐ
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    this.queue = [];
+    this.isPlaying = false;
+  }
+
+  // WebSocket経由でBlobが届いたら呼び出す
+  async addChunk(audioBlob) {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    
+    // Web Audio APIでバイナリをネイティブデコード
+    this.audioCtx.decodeAudioData(arrayBuffer, (audioBuffer) => {
+      this.queue.push(audioBuffer);
+      // 再生ループが停止していれば起動
+      if (!this.isPlaying) {
+        this.playNext();
+      }
+    }, (error) => {
+      console.error("音声デコードエラー:", error);
+    });
+  }
+
+  // キューから順次取り出して再生するループ
+  playNext() {
+    if (this.queue.length === 0) {
+      this.isPlaying = false;
+      return;
+    }
+
+    this.isPlaying = true;
+    const audioBuffer = this.queue.shift(); // 先頭のチャンクを取得
+
+    const source = this.audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(this.audioCtx.destination);
+
+    // 再生が終了したら自動的に次のチャンクへ
+    source.onended = () => {
+      this.playNext();
+    };
+
+    source.start(0);
+  }
+}
+
+// 使用例
+const player = new AudioStreamPlayer();
+const ws = new WebSocket("ws://localhost:8000/ws/audio");
+ws.binaryType = "blob";
+
+ws.onmessage = async (event) => {
+  if (event.data instanceof Blob) {
+    player.addChunk(event.data);
+  }
+};
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+4. 開発・運用の成功ポイント ＆ リスク管理
+------------------------------------------------------------------------
+
+1. ファースト・レスポンスの最適化（超重要）
+   最初の1文目の音声が出るまでの時間が、全体の「テンポ感」を決定づけます。
+   LLMへのプロンプトで「1文目は短めに答えてください」と指示を仕込むか、
+   最初のチャンクだけは文字数（例: 15文字）に達した時点で文末文字がなくても
+   強制的に区切ってBert-VITS2に回すロジックを入れると、レスポンスが劇的に向上します。
+
+2. バックグラウンド並列処理のバグ防止
+   Python側で `asyncio.create_task` を使う際、音声が生成完了した順番で
+   WebSocketに送られるため、稀に「2文目の音声合成が1文目より早く終わって、
+   順序が入れ替わってOBSに届く」リスクがあります。
+   これを防ぐため、各チャンクに「連番（インデックス）」を持たせるか、
+   サーバー側で送信順序を制御するキューを一段挟むとより堅牢になります。
+
+3. ハードウェアアクセラレーションの確認
+   OBSブラウザ（CEF）が非同期の音声デコードを行う際、OBS側の「ブラウザソースの
+   ハードウェアアクセラレーションを有効にする」設定がON/OFFどちらで
+   より滑らかに動作するか、フェーズ1の段階で確認してください。
+========================================================================

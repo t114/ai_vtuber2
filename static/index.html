@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>るりちゃん Control Panel</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-pink: #ff007f;
+            --neon-blue: #00f0ff;
+            --neon-green: #39ff14;
+            --cyber-yellow: #ffcc00;
+            --bg-dark: #0a0a0f;
+            --card-bg: rgba(20, 20, 30, 0.7);
+            --border-glow: rgba(255, 0, 127, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e0e0e0;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            padding: 20px;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 0, 127, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 240, 255, 0.15) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--neon-pink);
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        header h1 span {
+            color: var(--neon-pink);
+        }
+
+        .status-badge {
+            background: rgba(57, 255, 20, 0.1);
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+            text-transform: uppercase;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel-card h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--neon-blue);
+            border-left: 4px solid var(--neon-blue);
+            padding-left: 10px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+        }
+
+        /* ログモニター */
+        .log-monitor {
+            background: rgba(5, 5, 10, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #88c0d0;
+            line-height: 1.5;
+        }
+
+        .thought-monitor {
+            color: #d8dee9;
+            border-color: rgba(255, 0, 127, 0.2);
+        }
+
+        .reasoning-monitor {
+            color: #a3be8c;
+            border-color: rgba(57, 255, 20, 0.2);
+        }
+
+        /* フォーム要素 */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a0a0c0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"], textarea {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 8px rgba(255, 0, 127, 0.3);
+            outline: none;
+        }
+
+        /* ボタン */
+        button {
+            background: linear-gradient(135deg, var(--neon-pink), #9000ff);
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.7);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, var(--neon-blue), #0044ff);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .button-secondary:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+        }
+
+        /* グリッドコントロール */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 6px;
+            box-shadow: none;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transform: none;
+        }
+
+        /* 現在の配信トピックと会話ログ */
+        .chat-bubbles-card {
+            grid-column: 1 / -1;
+        }
+
+        .bubble-flow {
+            background: rgba(5, 5, 10, 0.6);
+            border-radius: 8px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-width: 80%;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .user-bubble {
+            background: rgba(0, 240, 255, 0.1);
+            border-left: 4px solid var(--neon-blue);
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        .user-bubble .name {
+            color: var(--neon-blue);
+            font-weight: 700;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .ruri-bubble {
+            background: rgba(255, 0, 127, 0.1);
+            border-right: 4px solid var(--neon-pink);
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .ruri-bubble .name {
+            color: var(--neon-pink);
+            font-weight: 700;
+            font-size: 11px;
+            margin-bottom: 4px;
+            text-align: right;
+        }
+
+        .topic-display {
+            background: rgba(255, 204, 0, 0.08);
+            border: 1px solid rgba(255, 204, 0, 0.2);
+            color: var(--cyber-yellow);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ruri.sys <span>[VTuber Control Panel]</span></h1>
+        <div class="status-badge" id="system-mode">Radio Mode</div>
+    </header>
+
+    <div class="container">
+        <!-- 左カラム: コメント模擬送信 & 手動モーション -->
+        <div class="panel-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h2>💬 コメント模擬送信</h2>
+                <div style="font-size: 13px; font-weight: 700; color: var(--neon-blue); background: rgba(0, 240, 255, 0.1); border: 1px solid var(--neon-blue); padding: 4px 12px; border-radius: 12px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);">
+                    キュー待ち: <span id="queue-count">0</span> 件
+                </div>
+            </div>
+            <form id="comment-form" onsubmit="sendComment(event)">
+                <div class="form-group">
+                    <label for="user-name">ユーザー名</label>
+                    <input type="text" id="user-name" value="テックオタク" required>
+                </div>
+                <div class="form-group" style="margin-top: 10px; margin-bottom: 15px;">
+                    <label for="comment-text">コメント内容</label>
+                    <textarea id="comment-text" rows="3" placeholder="るりちゃんに何か話しかけてね..." required></textarea>
+                </div>
+                <button type="submit">キューに送信</button>
+            </form>
+
+            <h2 style="margin-top: 15px;">🕹️ 手動 OSC コントロール</h2>
+            <div class="form-group">
+                <label>表情 (Emotions)</label>
+                <div class="controls-grid" id="emotions-grid">
+                    <!-- JavaScriptで動的生成 -->
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+                <label>モーション (Motions)</label>
+                <div class="controls-grid">
+                    <button class="control-btn" onclick="sendMotion('Waving')">Waving</button>
+                    <button class="control-btn" onclick="sendMotion('Bow')">Bow</button>
+                    <button class="control-btn" onclick="sendMotion('Pointing')">Pointing</button>
+                    <button class="control-btn" onclick="sendMotion('Talking1')">Talking1</button>
+                    <button class="control-btn" onclick="sendMotion('Talking2')">Talking2</button>
+                    <button class="control-btn" onclick="sendMotion('Talking3')">Talking3</button>
+                    <button class="control-btn" onclick="sendMotion('Neutral')">Neutral</button>
+                </div>
+            </div>
+
+            <h2 style="margin-top: 15px;">😴 スリープ & 記憶整理</h2>
+            <button class="button-secondary" onclick="triggerSleep()">スリープ（記憶整理）実行</button>
+        </div>
+
+        <!-- 右カラム: 思考プロセス & リアルタイム推理ログ -->
+        <div class="panel-card">
+            <h2>🧠 現在の思考ステップ</h2>
+            <div class="log-monitor thought-monitor" id="thought-log">エージェントは待機中だし。</div>
+
+            <h2>⚡ 推理プロセストークン (Reasoning Stream)</h2>
+            <div class="log-monitor reasoning-monitor" id="reasoning-log"></div>
+        </div>
+
+        <!-- 下段: 会話履歴 -->
+        <div class="panel-card chat-bubbles-card">
+            <h2>📻 現在の配信トピック</h2>
+            <div class="topic-display" id="topic-display">
+                📢 トピック: のんびり雑談中
+            </div>
+
+            <h2 style="margin-top: 10px;">💬 リアルタイム対話ログ</h2>
+            <div class="bubble-flow" id="chat-flow">
+                <!-- 会話ログの吹き出し -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 設定情報の取得
+        let emotions = [
+            "neutral", "joy", "happy", "angry", "angry2", "sad", 
+            "surprised", "blush", "jitome", "wink", "sleep", 
+            "sweat", "pale", "heart", "star", "note", "question", "exclamation"
+        ];
+
+        const emotionsGrid = document.getElementById("emotions-grid");
+        emotions.forEach(emo => {
+            const btn = document.createElement("button");
+            btn.className = "control-btn";
+            btn.textContent = emo;
+            btn.onclick = () => sendEmotion(emo);
+            emotionsGrid.appendChild(btn);
+        });
+
+        // SSE 接続の初期化
+        const eventSource = new EventSource("/api/events");
+
+        eventSource.addEventListener("status", (e) => {
+            const data = JSON.parse(e.data);
+            console.log("Status update received:", data);
+            
+            // キュー待ち数の更新
+            if (data.queue_size !== undefined) {
+                document.getElementById("queue-count").textContent = data.queue_size;
+            }
+            
+            // モード表示の更新
+            const modeEl = document.getElementById("system-mode");
+            if (data.mode === "chat") {
+                modeEl.textContent = "Chat Mode";
+                modeEl.style.borderColor = "var(--neon-blue)";
+                modeEl.style.color = "var(--neon-blue)";
+            } else if (data.mode === "thinking") {
+                modeEl.textContent = "Thinking Mode";
+                modeEl.style.borderColor = "var(--neon-green)";
+                modeEl.style.color = "var(--neon-green)";
+            } else {
+                modeEl.textContent = "Radio Mode";
+                modeEl.style.borderColor = "var(--neon-pink)";
+                modeEl.style.color = "var(--neon-pink)";
+            }
+
+            // トピック表示の更新
+            if (data.topic) {
+                document.getElementById("topic-display").textContent = `📻 トピック: ${data.topic}`;
+            }
+
+            // コメントとレスポンスをチャットログに追加
+            if (data.user_comment || data.ruri_msg) {
+                const chatFlow = document.getElementById("chat-flow");
+                
+                if (data.user_comment) {
+                    // 最後の吹き出しが同じコメントならスキップ
+                    const lastBubble = chatFlow.lastElementChild;
+                    if (!lastBubble || !lastBubble.classList.contains("user-bubble") || lastBubble.querySelector(".text").textContent !== data.user_comment) {
+                        const userDiv = document.createElement("div");
+                        userDiv.className = "bubble user-bubble";
+                        userDiv.innerHTML = `<div class="name">${data.user_name || "リスナー"}</div><div class="text">${data.user_comment}</div>`;
+                        chatFlow.appendChild(userDiv);
+                    }
+                }
+                
+                if (data.ruri_msg) {
+                    const lastBubble = chatFlow.lastElementChild;
+                    if (!lastBubble || !lastBubble.classList.contains("ruri-bubble") || lastBubble.querySelector(".text").textContent !== data.ruri_msg) {
+                        const ruriDiv = document.createElement("div");
+                        ruriDiv.className = "bubble ruri-bubble";
+                        ruriDiv.innerHTML = `<div class="name">るり (AI) [${data.emotion || "neutral"}]</div><div class="text">${data.ruri_msg}</div>`;
+                        chatFlow.appendChild(ruriDiv);
+                    }
+                }
+                
+                chatFlow.scrollTop = chatFlow.scrollHeight;
+            }
+        });
+
+        eventSource.addEventListener("thinking", (e) => {
+            const data = JSON.parse(e.data);
+            const logEl = document.getElementById("thought-log");
+            if (data) {
+                logEl.textContent = data;
+            } else {
+                logEl.textContent = "待機中だし。";
+            }
+            logEl.scrollTop = logEl.scrollHeight;
+        });
+
+        eventSource.addEventListener("reasoning", (e) => {
+            const data = JSON.parse(e.data);
+            const logEl = document.getElementById("reasoning-log");
+            
+            // データが空ならログのクリア指示
+            if (data === "") {
+                logEl.textContent = "";
+            } else {
+                logEl.textContent += data;
+            }
+            logEl.scrollTop = logEl.scrollHeight;
+        });
+
+        // 各種リクエスト関数
+        function sendComment(event) {
+            event.preventDefault();
+            const userName = document.getElementById("user-name").value;
+            const comment = document.getElementById("comment-text").value;
+            
+            fetch("/api/comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_name: userName, comment: comment })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Comment sent:", data);
+                document.getElementById("comment-text").value = "";
+            })
+            .catch(err => console.error("Error sending comment:", err));
+        }
+
+        function sendEmotion(emo) {
+            fetch("/api/motion", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ emotion: emo })
+            })
+            .then(res => res.json())
+            .then(data => console.log("Emotion updated:", data))
+            .catch(err => console.error("Error sending emotion:", err));
+        }
+
+        function sendMotion(mot) {
+            fetch("/api/motion", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ motion: mot })
+            })
+            .then(res => res.json())
+            .then(data => console.log("Motion triggered:", data))
+            .catch(err => console.error("Error sending motion:", err));
+        }
+
+        function triggerSleep() {
+            if (confirm("るりをスリープ状態にし、記憶の整理を開始しますか？")) {
+                fetch("/api/sleep", { method: "POST" })
+                .then(res => res.json())
+                .then(data => alert("スリープ要請を送信したし。ターミナルログを確認してね。"))
+                .catch(err => console.error("Error triggering sleep:", err));
+            }
+        }
+    </script>
+</body>
+</html>
