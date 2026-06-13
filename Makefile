@@ -1,4 +1,4 @@
-.PHONY: help run start-voicevox stop-voicevox status start sleep logs start-sd stop-sd
+.PHONY: help run start-voicevox stop-voicevox status start stop sleep logs start-sd stop-sd
 
 HERMES_HOME_PATH := /home/reppu/workspace/ai_vtuber2/.hermes
 
@@ -6,6 +6,7 @@ help:
 	@echo "=== Ruri AI VTuber 2 Execution Manager ==="
 	@echo "Available commands:"
 	@echo "  make start          - Start VOICEVOX or Style-Bert-VITS2 (based on config) and launch Ruri"
+	@echo "  make stop           - Stop Ruri backend and speech engines (VOICEVOX, Style-Bert-VITS2)"
 	@echo "  make run            - Run Ruri FastAPI Server directly"
 	@echo "  make start-voicevox - Run VOICEVOX Engine in Docker (background)"
 	@echo "  make stop-voicevox  - Stop VOICEVOX Engine Docker container"
@@ -106,3 +107,21 @@ logs:
 	else \
 		echo "server.log not found. Please run the server first."; \
 	fi
+
+stop:
+	@echo "Stopping Ruri backend and engines..."
+	@PID=$$(lsof -t -i:8000 2>/dev/null || pgrep -f "vtuber_server.py" | grep -v "$$$$" || true); \
+	if [ -n "$$PID" ]; then \
+		echo "Stopping Ruri backend process (PID: $$PID)..."; \
+		kill -9 $$PID 2>/dev/null || true; \
+	else \
+		echo "Ruri backend is not running."; \
+	fi
+	@PID_BERT=$$(lsof -t -i:5000 2>/dev/null || pgrep -f "server_fastapi.py" | grep -v "$$$$" || true); \
+	if [ -n "$$PID_BERT" ]; then \
+		echo "Stopping Style-Bert-VITS2 API server (PID: $$PID_BERT)..."; \
+		kill -9 $$PID_BERT 2>/dev/null || true; \
+	else \
+		echo "Style-Bert-VITS2 is not running."; \
+	fi
+	@$(MAKE) stop-voicevox
