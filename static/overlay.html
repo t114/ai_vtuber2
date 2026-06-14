@@ -394,6 +394,9 @@
                   }
                   if (pendingStatus.topic !== undefined && pendingStatus.topic !== null && pendingStatus.topic !== currentTopic) {
                       currentTopic = pendingStatus.topic;
+                      this.isLoading = true;
+                      this.readyToPlay = false;
+                      currentRuriMsg = "";
                       changed = true;
                   }
                   if (pendingStatus.user_name !== undefined && pendingStatus.user_name !== null && pendingStatus.user_name !== currentUserName) {
@@ -817,7 +820,14 @@
 
             // グローバル状態をマージ更新 (null/undefinedを厳格にガード)
             if (data.mode !== undefined && data.mode !== null) currentMode = data.mode;
-            if (data.topic !== undefined && data.topic !== null && data.topic !== "undefined") currentTopic = data.topic;
+            if (data.topic !== undefined && data.topic !== null && data.topic !== "undefined") {
+                if (data.topic !== currentTopic) {
+                    currentTopic = data.topic;
+                    audioPlayer.isLoading = true;
+                    audioPlayer.readyToPlay = false;
+                    currentRuriMsg = "";
+                }
+            }
             if (data.user_name !== undefined && data.user_name !== null) currentUserName = data.user_name;
             if (data.user_comment !== undefined && data.user_comment !== null) currentUserComment = data.user_comment;
             // ruri_msg は空文字("")も有効な値として受け入れる（リセット用）
