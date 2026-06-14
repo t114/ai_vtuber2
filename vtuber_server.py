@@ -816,6 +816,12 @@ def run_agent_loop():
                 continue
 
             # コメントを受信した場合の対話処理
+            now = time.time()
+            if now < playback_finish_time:
+                wait_time = playback_finish_time - now
+                print(f"[⏳ 待機] トピック読み上げ完了まで {wait_time:.2f}秒 待機するし...")
+                time.sleep(wait_time)
+
             last_activity_time = time.time()
             print(f"\n[💬 対話モード] {user_name}からのコメントを処理中: {comment}")
 
