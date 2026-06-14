@@ -372,6 +372,31 @@
             "sweat", "pale", "heart", "star", "note", "question", "exclamation"
         ];
 
+        const emotionJapaneseMap = {
+            "neutral": "通常",
+            "joy": "喜び",
+            "happy": "嬉しさ",
+            "angry": "怒り",
+            "angry2": "激怒",
+            "sad": "悲しみ",
+            "surprised": "驚き",
+            "blush": "照れ",
+            "jitome": "ジト目",
+            "wink": "ウィンク",
+            "sleep": "眠気",
+            "sweat": "焦り",
+            "pale": "青ざめ",
+            "gonyogonyo": "モジモジ",
+            "cat_mouth": "からかい",
+            "perori": "お茶目",
+            "heart": "デレ",
+            "star": "ワクワク",
+            "note": "ご機嫌",
+            "question": "疑問",
+            "exclamation": "強調",
+            "zzz": "居眠り"
+        };
+
         const emotionsGrid = document.getElementById("emotions-grid");
         emotions.forEach(emo => {
             const btn = document.createElement("button");
@@ -434,7 +459,9 @@
                     if (!lastBubble || !lastBubble.classList.contains("ruri-bubble") || lastBubble.querySelector(".text").textContent !== data.ruri_msg) {
                         const ruriDiv = document.createElement("div");
                         ruriDiv.className = "bubble ruri-bubble";
-                        ruriDiv.innerHTML = `<div class="name">るり (AI) [${data.emotion || "neutral"}]</div><div class="text">${data.ruri_msg}</div>`;
+                        const emotionText = data.emotion || "neutral";
+                        const emotionJp = emotionJapaneseMap[emotionText] || "通常";
+                        ruriDiv.innerHTML = `<div class="name">るり (AI) [${emotionText} (${emotionJp})]</div><div class="text">${data.ruri_msg}</div>`;
                         chatFlow.appendChild(ruriDiv);
                     }
                 }
