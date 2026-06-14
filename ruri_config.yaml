@@ -70,6 +70,7 @@ bert_vits2:
   model_name: "deltamon"
   length_scale: 1.0
   sdp_ratio: 0.2
+  style_weight: 0.7 # 感情の強さ調整 (0.0〜。1.0で本来の強さ。0.7程度に下げると別人化を防ぎつつ適度に感情が乗ります)
   local_playback: false
   emotion_styles:
     joy: "Joy"

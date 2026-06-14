@@ -332,18 +332,20 @@ def generate_bert_vits2_wav(clean_text, emotion="neutral"):
     model_name = bert_config.get("model_name", "")
     length_scale = bert_config.get("length_scale", 1.0)
     sdp_ratio = bert_config.get("sdp_ratio", 0.2)
+    style_weight = bert_config.get("style_weight", 1.0)
     
     style = "Neutral"
     emotion_styles = bert_config.get("emotion_styles", {})
     if emotion in emotion_styles:
         style = emotion_styles[emotion]
         
-    print(f"[📢 Style-Bert-VITS2 音声生成中...] (Speaker ID: {speaker}, Style: {style}) {clean_text}")
+    print(f"[📢 Style-Bert-VITS2 音声生成中...] (Speaker ID: {speaker}, Style: {style}, Weight: {style_weight}) {clean_text}")
     try:
         params = {
             "text": clean_text,
             "speaker_id": speaker,
             "style": style,
+            "style_weight": style_weight,
             "length": length_scale,
             "sdp_ratio": sdp_ratio
         }
