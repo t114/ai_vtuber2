@@ -37,8 +37,8 @@ ruri_memory.init_db(clean=False)
 
 # グローバル状態管理
 global_status = {
-    "mode": "radio",            # radio (独り語り) / chat (対話) / thinking (思考中)
-    "topic": "のんびり雑談中",
+    "mode": config.get("boot_mode", "chat"),            # radio (独り語り) / chat (対話) / thinking (思考中)
+    "topic": "のんびり雑談中" if config.get("boot_mode", "chat") == "chat" else "トレンドニュース紹介",
     "user_name": "",
     "user_comment": "",
     "ruri_msg": "ハローお前ら！るりちゃんだし！",
@@ -493,12 +493,12 @@ registry.register(
     name="learn_pronunciation", toolset="vtuber_tools",
     schema={
         "name": "learn_pronunciation",
-        "description": "リスナーから単語の読み間違いを指摘されたり、新しい言葉の読み方を教えてもらった時に、その読み方を登録して自己学習するし。",
+        "description": "リスナーから「Xの読み方はYだよ」「XはYと読むんだよ」のように正しい読み仮名（ひらがな・カタカナ）を提示されて、学習するように指示された時のみ、その単語と読み方をデータベースに登録して自己学習するツール。リスナーから読み方を「質問された時」には、絶対にこのツールを呼び出してはいけません。",
         "parameters": {
             "type": "object",
             "properties": {
-                "word": {"type": "string", "description": "登録する単語や言葉（例: 「三角関係」「EPYC」）。"},
-                "pronunciation": {"type": "string", "description": "その言葉のひらがな・カタカナの読み方（例: 「さんかくかんけい」「エピック」）。"}
+                "word": {"type": "string", "description": "登録する単語（ユーザーから提示されたもの。例: 「三角関係」「EPYC」）。絶対に自分から勝手に抽出した単語を登録しないでください。"},
+                "pronunciation": {"type": "string", "description": "ユーザーから教えてもらった正しいカタカナ・ひらがな表記の読み方（例: 「さんかくかんけい」「エピック」）。絶対に自分の推測やアルファベットごとのスペル読み（例: EPYCに対して「イーピーワイシー」）を登録しないでください。"}
             },
             "required": ["word", "pronunciation"]
         }
@@ -596,7 +596,7 @@ def _prefetch_next_radio():
         agent = _make_agent(llm_provider_val, config, "prefetch_radio")
         res = agent.run_conversation(
             user_message=f"次のトピックについて語ってください：\nタイトル: {news['title']}\n内容: {news['body']}\nURL: {news.get('url', '')}",
-            system_message=soul_prompt + RADIO_SYSTEM_SUFFIX
+            system_message=soul_prompt + get_pronunciation_context() + RADIO_SYSTEM_SUFFIX
         )
         with prefetch_lock:
             prefetch_buffer = {
@@ -638,6 +638,8 @@ def _prefetch_next_comment(user_name_val, comment_val, system_msg_val):
 def start_prefetch_radio():
     """先読みラジオ生成スレッドを起動する（多重起動防止付き）"""
     global prefetch_in_progress
+    if config.get("boot_mode") == "chat":
+        return
     with prefetch_lock:
         if prefetch_in_progress:
             return
@@ -665,6 +667,17 @@ def consume_prefetch(expected_type=None):
         result = prefetch_buffer.copy()
         prefetch_buffer.clear()
         return result
+
+def get_pronunciation_context():
+    """データベースから登録されている読み方リストをロードしてコンテキストテキストを生成する"""
+    try:
+        pronunciations_dict = ruri_memory.get_all_pronunciations()
+        if pronunciations_dict:
+            pronunciations_list = "\n".join([f"- {k}: {v}" for k, v in pronunciations_dict.items()])
+            return f"\n\n【登録されている単語の正しい読み方リスト（TTSでの発音設定）】\nこのリストにある英単語や略称を返答テキストに含める場合、または読み方を尋ねられた場合は、必ずこの読み方に従ってください：\n{pronunciations_list}"
+    except Exception as e:
+        print(f"[WARNING] 読み方リストのロードに失敗したし: {e}")
+    return ""
 
 def run_agent_loop():
     """バックグラウンドでチャットキューの監視と、スリープ時独り語り（ラジオ）を実行するメインループ"""
@@ -699,6 +712,8 @@ def run_agent_loop():
                 user_name, comment = comment_queue.get(timeout=1.0)
                 broadcast_event("status", {"queue_size": comment_queue.qsize()})
             except queue.Empty:
+                if config.get("boot_mode") == "chat":
+                    continue
                 now = time.time()
                 radio_cfg = config.get("radio", {}) or {}
                 idle_timeout = float(radio_cfg.get("idle_timeout", 20.0))
@@ -781,7 +796,7 @@ def run_agent_loop():
                             skip_memory=True
                         )
 
-                        soliloquy_system = soul_prompt + RADIO_SYSTEM_SUFFIX
+                        soliloquy_system = soul_prompt + get_pronunciation_context() + RADIO_SYSTEM_SUFFIX
 
                         voice_generated_during_run = False
                         spoken_texts_during_run = []
@@ -857,7 +872,7 @@ def run_agent_loop():
             user_context = f"\n\n【現在会話中のリスナー情報】\n名前: {user_name}\n発言回数: {activity.get('message_count', 1)}回\n前回会った日時: {activity.get('prev_seen', '')} (現在時間: {time.time()})\n前回のメッセージ: {activity.get('prev_message', '')}\n覚えている記憶:\n{memory_text}"
 
             prompt_instruction = "\n\n【重要：発話と感情表現】\n会話の返答（喋る内容）は、`speak` などの発話ツールを呼び出すのではなく、**返答テキストとして直接出力**してください。また、感情を表現するために、各文の冒頭に `[joy]` や `[jitome]` などの感情タグを必ず付与してください。（例: `[joy]ハローお前ら！[wink]今日も楽しんでいこうだし！`）。"
-            full_system_msg = soul_prompt + user_context + prompt_instruction
+            full_system_msg = soul_prompt + user_context + get_pronunciation_context() + prompt_instruction
 
             # 先読みキャッシュを確認する（同一ユーザー＆コメントのみ適用）
             cached = consume_prefetch(expected_type="chat")

@@ -168,6 +168,9 @@ radio:
   idle_timeout: 10.0      # コメントが途絶えてからラジオを開始するまでの待機秒数
   inter_topic_gap: 3.0    # ラジオ→ラジオ間のトピック切替インターバル（秒）
 
+# 起動配信モード ("chat" または "radio")
+boot_mode: "chat"
+
 # 使用するLLMプロバイダ ("ollama" または "gemini")
 llm_provider: "ollama"
 
