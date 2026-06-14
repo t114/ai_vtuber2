@@ -189,3 +189,7 @@ gemini:
   glasses_vts_expression: "glasses.exp3.json" # VTube Studioのメガネ用表情ファイル名
   glasses_osc_on_expression: "glasses_on"    # Unity OSCでメガネをかけるExpression名
   glasses_osc_off_expression: "glasses_off"  # Unity OSCでメガネを外すExpression名
+
+# 音声出力設定
+audio:
+  volume: 0.8 # オーバーレイの音量調整 (0.0〜1.0)

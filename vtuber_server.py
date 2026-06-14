@@ -1233,11 +1233,13 @@ async def get_web_config():
     """VTube Studioなどのフロントエンド用設定情報を取得する"""
     vts_cfg = config.get("vts", {}) or {}
     gemini_cfg = config.get("gemini", {}) or {}
+    audio_cfg = config.get("audio", {}) or {}
     return JSONResponse(content={
         "vts_enabled": vts_cfg.get("enabled", True),
         "vts_port": vts_cfg.get("port", 8001),
         "vts_emotions": vts_cfg.get("emotions", {}),
-        "glasses_vts_expression": gemini_cfg.get("glasses_vts_expression", "glasses.exp3.json")
+        "glasses_vts_expression": gemini_cfg.get("glasses_vts_expression", "glasses.exp3.json"),
+        "volume": audio_cfg.get("volume", 1.0)
     })
 
 @app.post("/api/comment")

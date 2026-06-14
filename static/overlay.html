@@ -288,6 +288,7 @@
         let vtsEmotionsMap = {};
         let glassesVtsExpression = "";
         let currentGlassesOn = false;
+        let audioVolume = 1.0;
         
         let vtsWs = null;
         let vtsToken = localStorage.getItem('ruri_vts_token') || "";
@@ -484,7 +485,10 @@
             const source = this.audioCtx.createBufferSource();
             this.activeSource = source;
             source.buffer = item.buffer;
-            source.connect(this.audioCtx.destination);
+            const gainNode = this.audioCtx.createGain();
+            gainNode.gain.setValueAtTime(audioVolume, this.audioCtx.currentTime);
+            source.connect(gainNode);
+            gainNode.connect(this.audioCtx.destination);
             
             source.onended = () => {
               if (this.activeSource === source) {
@@ -577,6 +581,7 @@
                 vtsPort = data.vts_port;
                 vtsEmotionsMap = data.vts_emotions || {};
                 glassesVtsExpression = data.glasses_vts_expression || "";
+                audioVolume = data.volume !== undefined ? data.volume : 1.0;
                 
                 if (vtsEnabled) {
                     connectVTS();
