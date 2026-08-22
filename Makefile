@@ -83,7 +83,7 @@ start:
 	if [ "$$BERT_ENABLED" = "true" ]; then \
 		if ! curl -s --connect-timeout 2 http://localhost:5000/models/info >/dev/null; then \
 			echo "Starting Style-Bert-VITS2 API server..."; \
-			cd /home/reppu/Style-Bert-VITS2 && ./venv/bin/python3 server_fastapi.py >server.log 2>&1 & \
+			cd /home/reppu/Style-Bert-VITS2 && CUDA_VISIBLE_DEVICES=1 ./venv/bin/python3 server_fastapi.py >server.log 2>&1 & \
 			echo "Waiting for Style-Bert-VITS2 to be ready..."; \
 			until curl -s --connect-timeout 2 http://localhost:5000/models/info >/dev/null; do sleep 1; done; \
 		fi; \
