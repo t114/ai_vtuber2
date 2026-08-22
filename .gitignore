@@ -6,3 +6,4 @@ __pycache__/
 *.log
 *.wav
 ruri_status.json
+.env
